@@ -34,3 +34,8 @@ type EchoMessageBody struct {
 	MessageBody
 	Echo string `json:"echo"`
 }
+
+type GenerateMessageBody struct {
+	MessageBody
+	Id string `json:"id"`
+}

@@ -18,3 +18,8 @@ install-maelstrom:
 echo:
 	(cd c1-echo && go install .) && \
 	$(MAELSTROM_BIN) test -w echo --bin /go/bin/echo --log-stderr --node-count 1 --time-limit 10
+
+.PHONY: generate
+generate:
+	(cd c2-generate && go install .) && \
+	$(MAELSTROM_BIN) test -w unique-ids --bin /go/bin/generate --log-stderr --time-limit 30 --rate 1000 --node-count 3 --availability total --nemesis partition
