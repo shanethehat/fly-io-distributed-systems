@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
-	"os"
 
 	"github.com/google/uuid"
 
@@ -11,57 +9,28 @@ import (
 )
 
 func main() {
-	scanner := bufio.NewScanner(os.Stdin)
 	messageCount := common.NewCounter()
+	node := common.NewNode()
 
-	for scanner.Scan() {
-		line := scanner.Bytes()
+	node.RegisterHandler("generate", func(n common.NodeInterface, message common.Message) error {
+		var generateBody common.MessageBody
 
-		var msg common.Message
-
-		if err := json.Unmarshal(line, &msg); err != nil {
-			panic(err)
+		if err := json.Unmarshal(message.Body, &generateBody); err != nil {
+			return err
 		}
 
-		var responseBody json.RawMessage
+		r, _ := json.Marshal(
+			common.GenerateMessageBody{
+				MessageBody: common.MessageBody{
+					Type:      "generate_ok",
+					MessageId: messageCount.IncrementAndRead(),
+					InReplyTo: generateBody.MessageId},
+				Id: uuid.NewString()})
 
-		switch msg.GetType() {
-		case "init":
-			var initBody common.InitMessageBody
+		node.Send(message.Src, r)
 
-			if err := json.Unmarshal(msg.Body, &initBody); err != nil {
-				panic(err)
-			}
+		return nil
+	})
 
-			r, _ := json.Marshal(
-				common.MessageBody{
-					Type:      "init_ok",
-					InReplyTo: initBody.MessageId})
-			responseBody = r
-
-		case "generate":
-			var generateBody common.MessageBody
-
-			if err := json.Unmarshal(msg.Body, &generateBody); err != nil {
-				panic(err)
-			}
-
-			r, _ := json.Marshal(
-				common.GenerateMessageBody{
-					MessageBody: common.MessageBody{
-						Type:      "generate_ok",
-						MessageId: messageCount.IncrementAndRead(),
-						InReplyTo: generateBody.MessageId},
-					Id: uuid.NewString()})
-			responseBody = r
-		}
-
-		response, _ := json.Marshal(
-			common.Message{
-				Src:  msg.Dest,
-				Dest: msg.Src,
-				Body: responseBody})
-
-		os.Stdout.WriteString(string(response) + "\n")
-	}
+	node.Start()
 }

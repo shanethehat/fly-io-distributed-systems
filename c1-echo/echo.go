@@ -1,65 +1,34 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
-	"os"
 
 	"flydistsys/common"
 )
 
 func main() {
-	scanner := bufio.NewScanner(os.Stdin)
 	messageCount := common.NewCounter()
+	node := common.NewNode()
 
-	for scanner.Scan() {
-		line := scanner.Bytes()
+	node.RegisterHandler("echo", func(n common.NodeInterface, message common.Message) error {
+		var echoBody common.EchoMessageBody
 
-		var msg common.Message
-
-		if err := json.Unmarshal(line, &msg); err != nil {
-			panic(err)
+		if err := json.Unmarshal(message.Body, &echoBody); err != nil {
+			return err
 		}
 
-		var responseBody json.RawMessage
+		r, _ := json.Marshal(
+			common.EchoMessageBody{
+				MessageBody: common.MessageBody{
+					Type:      "echo_ok",
+					MessageId: messageCount.IncrementAndRead(),
+					InReplyTo: echoBody.MessageId},
+				Echo: echoBody.Echo})
 
-		switch msg.GetType() {
-		case "init":
-			var initBody common.InitMessageBody
+		n.Send(message.Src, r)
 
-			if err := json.Unmarshal(msg.Body, &initBody); err != nil {
-				panic(err)
-			}
+		return nil
+	})
 
-			r, _ := json.Marshal(
-				common.MessageBody{
-					Type:      "init_ok",
-					InReplyTo: initBody.MessageId})
-			responseBody = r
-
-		case "echo":
-			var echoBody common.EchoMessageBody
-
-			if err := json.Unmarshal(msg.Body, &echoBody); err != nil {
-				panic(err)
-			}
-
-			r, _ := json.Marshal(
-				common.EchoMessageBody{
-					MessageBody: common.MessageBody{
-						Type:      "echo_ok",
-						MessageId: messageCount.IncrementAndRead(),
-						InReplyTo: echoBody.MessageId},
-					Echo: echoBody.Echo})
-			responseBody = r
-		}
-
-		response, _ := json.Marshal(
-			common.Message{
-				Src:  msg.Dest,
-				Dest: msg.Src,
-				Body: responseBody})
-
-		os.Stdout.WriteString(string(response) + "\n")
-	}
+	node.Start()
 }
