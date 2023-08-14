@@ -39,3 +39,18 @@ type GenerateMessageBody struct {
 	MessageBody
 	Id string `json:"id"`
 }
+
+type TopologyMessageBody struct {
+	MessageBody
+	Topology map[string][]string `json:"topology"`
+}
+
+type BroadcastMessageBody struct {
+	MessageBody
+	Message int `json:"message"`
+}
+
+type ReadMessageBody struct {
+	MessageBody
+	Messages []int `json:"messages"`
+}

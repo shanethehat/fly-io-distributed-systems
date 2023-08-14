@@ -30,3 +30,8 @@ echo:
 generate:
 	(cd c2-generate && go install .) && \
 	$(MAELSTROM_BIN) test -w unique-ids --bin /go/bin/generate --log-stderr --time-limit 30 --rate 1000 --node-count 3 --availability total --nemesis partition
+
+.PHONY: broadcast-1
+broadcast-1:
+	(cd c3-broadcast && go install .) && \
+	$(MAELSTROM_BIN) test -w broadcast --bin /go/bin/broadcast --log-stderr --node-count 1 --time-limit 20 --rate 10

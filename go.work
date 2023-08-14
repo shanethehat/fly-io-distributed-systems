@@ -3,5 +3,6 @@ go 1.21.0
 use (
 	./c1-echo
 	./c2-generate
+	./c3-broadcast
 	./common
 )
