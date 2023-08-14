@@ -5,7 +5,7 @@ import (
 )
 
 type Counter struct {
-	count uint64
+	count uint32
 }
 
 func NewCounter() *Counter {
@@ -13,6 +13,6 @@ func NewCounter() *Counter {
 }
 
 func (counter *Counter) IncrementAndRead() int {
-	atomic.AddUint64(&counter.count, 1)
+	atomic.AddUint32(&counter.count, 1)
 	return int(counter.count)
 }

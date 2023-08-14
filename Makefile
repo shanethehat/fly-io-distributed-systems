@@ -14,6 +14,13 @@ install-maelstrom:
 	curl -O -L https://github.com/jepsen-io/maelstrom/releases/download/v0.2.3/maelstrom.tar.bz2 && \
 	tar -xvf maelstrom.tar.bz2
 
+.PHONY: test
+test: test-common
+
+.PHONY: test-common
+test-common:
+	cd common && go test
+
 .PHONY: echo
 echo:
 	(cd c1-echo && go install .) && \
