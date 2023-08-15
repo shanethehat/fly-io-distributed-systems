@@ -35,3 +35,8 @@ generate:
 broadcast-1:
 	(cd c3-broadcast && go install .) && \
 	$(MAELSTROM_BIN) test -w broadcast --bin /go/bin/broadcast --log-stderr --node-count 1 --time-limit 20 --rate 10
+
+.PHONY: broadcast-2
+broadcast-2:
+	(cd c3-broadcast && go install .) && \
+	$(MAELSTROM_BIN) test -w broadcast --bin /go/bin/broadcast --log-stderr --node-count 5 --time-limit 20 --rate 10

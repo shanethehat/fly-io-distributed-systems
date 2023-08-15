@@ -11,6 +11,7 @@ type Handler func(node NodeInterface, message Message) error
 type Node struct {
 	nodeId       string
 	clusterNodes []string
+	neighbours   []string
 
 	handlers map[string]Handler
 }
@@ -18,6 +19,8 @@ type Node struct {
 type NodeInterface interface {
 	RegisterHandler(command string, handler Handler)
 	Send(dest string, body json.RawMessage)
+	SendToNeighbours(body json.RawMessage)
+	SetNeighbours(topology map[string][]string)
 	Start()
 }
 
@@ -29,6 +32,20 @@ func NewNode() NodeInterface {
 
 func (node *Node) RegisterHandler(command string, handler Handler) {
 	node.handlers[command] = handler
+}
+
+func (node *Node) SetNeighbours(topology map[string][]string) {
+	neighbours, present := topology[node.nodeId]
+
+	if present {
+		node.neighbours = neighbours
+	}
+}
+
+func (node *Node) SendToNeighbours(body json.RawMessage) {
+	for _, neighbour := range node.neighbours {
+		node.Send(neighbour, body)
+	}
 }
 
 func (node *Node) init(body InitMessageBody) {

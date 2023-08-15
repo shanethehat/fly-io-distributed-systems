@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"slices"
 
 	"flydistsys/common"
 )
@@ -13,17 +14,19 @@ func main() {
 	var messages = make([]int, 1)
 
 	node.RegisterHandler("topology", func(n common.NodeInterface, message common.Message) error {
-		var broadcastBody common.BroadcastMessageBody
+		var topologyBody common.TopologyMessageBody
 
-		if err := json.Unmarshal(message.Body, &broadcastBody); err != nil {
+		if err := json.Unmarshal(message.Body, &topologyBody); err != nil {
 			return err
 		}
+
+		n.SetNeighbours(topologyBody.Topology)
 
 		r, _ := json.Marshal(
 			common.MessageBody{
 				Type:      "topology_ok",
 				MessageId: messageCount.IncrementAndRead(),
-				InReplyTo: broadcastBody.MessageId})
+				InReplyTo: topologyBody.MessageId})
 
 		node.Send(message.Src, r)
 
@@ -37,15 +40,32 @@ func main() {
 			return err
 		}
 
-		messages = append(messages, broadcastBody.Message)
+		if !slices.Contains(messages, broadcastBody.Message) {
+			messages = append(messages, broadcastBody.Message)
 
-		r, _ := json.Marshal(
-			common.MessageBody{
-				Type:      "broadcast_ok",
-				MessageId: messageCount.IncrementAndRead(),
-				InReplyTo: broadcastBody.MessageId})
+			m, _ := json.Marshal(
+				common.BroadcastMessageBody{
+					MessageBody: common.MessageBody{
+						Type:      "broadcast",
+						MessageId: messageCount.IncrementAndRead(),
+						InReplyTo: 0,
+					},
+					Message: broadcastBody.Message,
+				},
+			)
+			node.SendToNeighbours(m)
+		}
 
-		node.Send(message.Src, r)
+		// only send a response if the origin is a client
+		if message.Src[0] == 'c' {
+			r, _ := json.Marshal(
+				common.MessageBody{
+					Type:      "broadcast_ok",
+					MessageId: messageCount.IncrementAndRead(),
+					InReplyTo: broadcastBody.MessageId})
+
+			node.Send(message.Src, r)
+		}
 
 		return nil
 	})
